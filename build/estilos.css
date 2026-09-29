@@ -305,21 +305,3 @@
   .rel-adlink:hover{text-decoration:underline}
   .rel-adlink.off{color:var(--muted); font-weight:400}
 
-  /* Insights de Tráfego: 1 análise por dia (23h59 BRT), 6 seções em texto
-     corrido (sem tabelas) — ver build/GUIA-RELATORIOS.md. */
-  .rel-brief{display:flex; flex-direction:column; gap:14px}
-  .rel-brief-empty{color:var(--muted); font-size:13px}
-
-  .rel-sec-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 22px; line-height:1.6; font-size:13.5px}
-  .rel-sec-card>h3{margin:0 0 10px; font-size:13px; color:var(--accent-blue); text-transform:uppercase; letter-spacing:.04em}
-  .rel-sec-body p{margin:0 0 10px}
-  .rel-sec-body p:last-child{margin-bottom:0}
-  .rel-sec-body ul{margin:0 0 10px; padding-left:20px}
-  .rel-sec-body ul:last-child{margin-bottom:0}
-  .rel-sec-body li{margin:0 0 6px}
-  .rel-sec-body b{color:var(--ink)}
-
-  /* Gargalo de dado — prioridade alta: destaque visual (só aparece quando
-     alguma fonte de dado está desconectada). */
-  .rel-sec-gargalo{background:color-mix(in srgb,var(--bad) 8%,var(--surface)); border-color:color-mix(in srgb,var(--bad) 35%,var(--border))}
-  .rel-sec-gargalo>h3{color:var(--bad)}

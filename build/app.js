@@ -583,15 +583,15 @@ function renderGeralCore(ids){
   const srcName={meta:'Meta Ads',google:'Google Ads',org:'Orgânico',outros:'Outros'};
   const bySrc={}; fL.forEach(l=>{const k=srcName[l.src]||l.src; bySrc[k]=(bySrc[k]||0)+1;});
   hbar(ids.source, Object.entries(bySrc).map(([label,leads])=>({label,leads})), x=>x.leads, ()=>cvar('--chart-leads'));
-  // por perfil profissional (verde = qualificado, cinza = não qualificado; "Sem resposta" sempre por último)
+  // por faixa de faturamento (verde = qualificado, cinza = não qualificado; "Sem resposta" sempre por último)
   const byB={}; fL.forEach(l=>{byB[l.bucket]=byB[l.bucket]||{label:l.bucket,leads:0,q:l.q}; byB[l.bucket].leads++;});
   const bArr=Object.values(byB).sort((a,b)=>(a.label==='Sem resposta')-(b.label==='Sem resposta')||b.leads-a.leads);
   hbar(ids.bucket, bArr, x=>x.leads, x=>x.q?cvar('--bar-q'):cvar('--bar-noq'));
   // por plataforma
-  const platName={ig:'Instagram',fb:'Facebook','—':'Orgânico/—'};
+  const platName={ig:'Instagram',fb:'Facebook',an:'Audience Network','—':'Orgânico/—'};
   const byP={}; fL.forEach(l=>{const k=platName[l.plat]||l.plat; byP[k]=(byP[k]||0)+1;});
   hbar(ids.plat, Object.entries(byP).map(([label,leads])=>({label,leads})), x=>x.leads, ()=>cvar('--chart-leads'));
-  // por profissao (top 10)
+  // por formulário (top 10)
   const byPr={}; fL.forEach(l=>{byPr[l.prof]=(byPr[l.prof]||0)+1;});
   hbar(ids.prof, Object.entries(byPr).map(([label,leads])=>({label,leads})), x=>x.leads, ()=>cvar('--chart-mqls'), 10);
   // tabela diaria (todos os leads), ultimo dia no topo + heatmap
@@ -605,7 +605,7 @@ function renderGeralCore(ids){
 }
 /* ---------------- PAGE 3: Relatório ----------------
    Espelha a Visão Geral (renderGeralCore com IDs próprios) e, abaixo, acrescenta
-   Top Anúncios · Piores Anúncios · Briefing do Gestor. */
+   Top Anúncios · Piores Anúncios. */
 const AD_LINKS = DATA.ad_links || {};
 const SAMPLE_MIN_SPEND = (B.sample_min_spend!=null?B.sample_min_spend:100);
 const SAMPLE_MIN_MQLS  = (B.sample_min_mqls!=null?B.sample_min_mqls:3);
@@ -746,33 +746,6 @@ function relRenderAdTable(id,list){
   });
 }
 
-/* Insights de Tráfego: UMA análise por dia (gerada 23h59 BRT), não por
-   período selecionado — não reage ao seletor de período da topbar. 6 seções
-   fixas (ver build/GUIA-RELATORIOS.md); "gargalo_dado" só aparece quando
-   alguma fonte de dado (hoje: Agendamentos) está desconectada. */
-const REL_SECTIONS=[
-  ['resumo_periodo','Resumo do período'],
-  ['leitura_funil','Leitura do funil'],
-  ['classificacao_campanhas','Classificação por campanha/conjunto'],
-  ['gargalo_dado','Gargalo de dado — prioridade alta'],
-  ['acoes_recomendadas','Ações recomendadas'],
-  ['proxima_decisao','Próxima decisão'],
-];
-
-function renderRelBrief(){
-  const wrap=document.getElementById('relBrief'), stampEl=document.getElementById('relBriefStamp');
-  const bf=DATA.briefings||{};
-  const temConteudo=REL_SECTIONS.some(([k])=>bf[k]);
-  stampEl.textContent = bf.generated_at ? `Insights gerados por IA · última atualização ${bf.generated_at} · atualiza 1×/dia (23h59 BRT)` : '';
-  if(!temConteudo){
-    wrap.innerHTML='<div class="rel-brief-empty">Os insights por IA ainda não foram gerados. São atualizados automaticamente 1×/dia, às 23h59 (horário de Brasília).</div>';
-    return;
-  }
-  wrap.innerHTML = REL_SECTIONS.filter(([k])=>bf[k]).map(([k,title])=>
-    `<div class="rel-sec-card${k==='gargalo_dado'?' rel-sec-gargalo':''}"><h3>${title}</h3><div class="rel-sec-body">${bf[k]}</div></div>`
-  ).join('');
-}
-
 /* Top Anúncios (separado p/ recolorir sem re-renderizar os gráficos quando o
    usuário edita as metas). Considera todos os leads + gasto do período.
    Mar10: NÃO força um número fixo de linhas preenchendo com anúncios sem
@@ -826,7 +799,6 @@ function renderRelatorio(){
 
   renderMetasNote();
   renderRelAds();
-  renderRelBrief();
 }
 
 /* colunas padrão das tabelas de heatmap por dia (ordem pedida) */

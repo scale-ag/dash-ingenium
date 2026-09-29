@@ -1,35 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gera a dashboard estatica (index.html) a partir de 3 abas em 2 planilhas do
-cliente Lucas Nigro (Funil "RAL" / Metodo RaL):
+Gera a dashboard estatica (index.html) do cliente Ingenium Advisers
+(Funil de Sessao Estrategica · sigla de campanha "IA") a partir de 2 planilhas:
 
-  - "Leads" (planilha do Funil, SPREADSHEET_ID_FUNIL): fonte UNICA de leads
-    (nao ha aba "Conversas" nesse cliente). Cada linha ja vem com a
-    atribuicao de campanha/conjunto/anuncio pronta via utm_campaign/
-    utm_medium/utm_content — que chegam identicos a Campaign Name/Ad Set
-    Name/Ad Name do Meta Ads.
-  - "Vendas" (mesma planilha do Funil): compradores. Cruza com Leads por
-    lead_id (FK direta); quando lead_id vem vazio, cai no fallback por
-    TELEFONE canonico (DDI "55" e 9o digito do celular, presentes ou nao).
-  - "Pagina 1" (planilha Meta Ads, SPREADSHEET_ID_META): investimento,
-    impressoes, cliques e landing page views do gerenciador.
+  - "Lead Ads" (planilha de Leads, SPREADSHEET_ID_LEADS): fonte UNICA de
+    leads (formulario nativo do Meta). Cada linha ja traz campaign_name /
+    adset_name / ad_name, que cruzam 1:1 com Campaign Name / Ad Set Name /
+    Ad Name do Meta Ads.
+  - "Lead Ads" (planilha Meta Ads, SPREADSHEET_ID_META): investimento,
+    impressoes e cliques do gerenciador.
+  - Compradores/Vendas: AINDA NAO CONECTADA (SPREADSHEET_ID_VENDAS = None).
+    A estrutura de Vendas/CAC/Faturamento/ROAS fica na tela como mockup
+    (zerada/"-"); basta preencher o ID/aba para ligar o cruzamento.
 
-Criterio de Lead Qualificado (MQL): coluna "classificacao" (coluna O da aba
-Leads) == "QUALIFICADO" (nao-qualificado = "DESQUALIFICADO").
+Criterio de Lead Qualificado (MQL): coluna M da aba Leads
+("qual_e_o_faturamento_anual_da_sua_empres?_") em
+"de_r$_200.000,00_a_r$_500.000,00" ou "acima_de_r$_500.000,00"
+(nao-qualificado = "ate_r$_200.000,00").
 
 Este script apenas LE as planilhas (export CSV publico, buscado por NOME da
 aba — sem depender de gid) e emite os REGISTROS BRUTOS (leads[], meta[] e
-sales[]) dentro do HTML. sales[] tem um registro POR COMPRA (nunca agregado
-por lead/telefone), com a DATA REAL da compra ("pago_em") — camp/adset/ad
-vem do lead de origem (por lead_id ou, na ausencia, pelo 1o lead daquele
-telefone), nunca a data da compra e' trocada pela do lead. Todos os filtros,
-agregacoes, KPIs, tabelas e graficos sao calculados no navegador (client-side
-em app.js). Nunca escreve nada de volta nas planilhas.
+sales[]) dentro do HTML. Todos os filtros, agregacoes, KPIs, tabelas e
+graficos sao calculados no navegador (client-side em app.js). Nunca escreve
+nada de volta nas planilhas.
 
 Teste local: --leads-file / --meta-file / --sales-file apontando para CSVs
-baixados (o sandbox do agente nao alcanca docs.google.com; o runner do
-GitHub Actions alcanca).
+baixados.
 """
 from __future__ import annotations
 
@@ -45,22 +42,25 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
-# Planilha do Funil (Leads + Vendas) — cliente nao usa gid, busca por nome de aba.
-SPREADSHEET_ID_FUNIL = "1j3EQE4zbRlUVAKyDPTmlnTDP0Jlvw-enQyMPR2LXjfk"
-SHEET_LEADS = "Leads"
+# Planilha de Leads (formulario nativo Meta) — busca por nome de aba, sem gid.
+SPREADSHEET_ID_LEADS = "1Gw6XZSL8OG4VYs8rEP2_vHvYLhbT4uhJFBOlLRyBZIg"
+SHEET_LEADS = "Lead Ads"
+# Planilha de Compradores — ainda nao conectada (mockup). Preencher para ligar
+# o cruzamento de vendas (colunas esperadas em build_purchases()).
+SPREADSHEET_ID_VENDAS = None
 SHEET_VENDAS = "Vendas"
-# Planilha do Meta Ads (separada da planilha do Funil).
-SPREADSHEET_ID_META = "1xb5itNu9_No6keCKHyzG7qIPobT46BqfmJ_rP0v4h8c"
-SHEET_META = "Página 1"
+# Planilha do Meta Ads (separada da planilha de Leads).
+SPREADSHEET_ID_META = "1MhIiyKadHKOqCQ0l5zEOD2gB7FqI8TNJVOQZhxBhmLY"
+SHEET_META = "Lead Ads"
 EXPORT_URL = "https://docs.google.com/spreadsheets/d/{sid}/gviz/tq?tqx=out:csv&sheet={sheet}"
 
 # Identificação do cliente/conta (usada só em textos/relatórios — não afeta o cruzamento de dados).
-CLIENT_NAME = "Lucas Nigro"
+CLIENT_NAME = "Ingenium Advisers"
 MAIN_PRODUCT = "Funil de Sessão Estratégica"
 # Prefixo comum a TODAS as campanhas da conta (usado para agrupar campanhas no
 # dashboard, sem filtrar por sub-funil/etapa — ex. campanhas "E2-CAP" continuam
-# entrando normalmente, só o prefixo "RAL" é exigido).
-MAIN_PRODUCT_PREFIX = "RAL"
+# entrando normalmente, só o prefixo "IA" é exigido).
+MAIN_PRODUCT_PREFIX = "IA"
 
 BRT = timezone(timedelta(hours=-3))   # horario de Brasilia (exibicao)
 TAX_FACTOR = 1.1385   # imposto de 13,85% sobre o gasto de mídia (Meta Ads)
@@ -90,7 +90,7 @@ N_DIAS_CORTE = 5           # dias consecutivos acima do teto p/ considerar corte
 # Leitura
 # --------------------------------------------------------------------------- #
 def fetch_csv(url: str) -> list[list[str]]:
-    req = urllib.request.Request(url, headers={"User-Agent": "dash-ral-bot/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "dash-ingenium-bot/1.0"})
     with urllib.request.urlopen(req, timeout=60) as resp:
         raw = resp.read().decode("utf-8", errors="replace")
     return list(csv.reader(io.StringIO(raw)))
@@ -186,9 +186,25 @@ def is_yes(v: str | None) -> bool:
     return norm(v) in ("sim", "s", "yes", "true", "1")
 
 
+# Faixas de faturamento anual (coluna M da aba Leads) que contam como MQL.
+MQL_FAIXAS = {"de_r$_200.000,00_a_r$_500.000,00", "acima_de_r$_500.000,00"}
+
+
 def is_qualificado(v: str | None) -> bool:
-    """Critério de MQL: coluna "classificacao" (coluna O da aba Leads) == "QUALIFICADO"."""
-    return norm(v) == "qualificado"
+    """Critério de MQL: faturamento anual (coluna M) acima de R$ 200 mil."""
+    return norm(v) in {norm(f) for f in MQL_FAIXAS}
+
+
+FAIXA_LABELS = {
+    "ate_r$_200.000,00": "Até R$ 200 mil",
+    "de_r$_200.000,00_a_r$_500.000,00": "R$ 200 mil a R$ 500 mil",
+    "acima_de_r$_500.000,00": "Acima de R$ 500 mil",
+}
+
+
+def pretty_faixa(v: str) -> str:
+    s = (v or "").strip()
+    return FAIXA_LABELS.get(norm(s), s) if s else "Sem resposta"
 
 
 def pretty_bucket(v: str) -> str:
@@ -346,10 +362,11 @@ def process(leads_rows, meta_rows, sales_rows):
     lheader = leads_rows[0] if leads_rows else []
     lidx = header_index(
         lheader,
-        {"id": ["id"], "created": ["criado_em"], "phone": ["whatsapp"], "name": ["nome"],
-         "qualif": ["classificacao"], "campaign": ["utm_campaign"], "adset": ["utm_medium"],
-         "ad": ["utm_content"], "bucket": ["atende_empresas"]},
-        {"id": 0, "created": 1, "phone": 3, "name": 2, "qualif": 14, "campaign": 7, "adset": 6, "ad": 8, "bucket": 10},
+        {"id": ["id"], "created": ["created_time"], "phone": ["phone_number"], "name": ["nome_completo"],
+         "qualif": ["qual_é_o_faturamento_anual"], "campaign": ["campaign_name"], "adset": ["adset_name"],
+         "ad": ["ad_name"], "plat": ["platform"], "form": ["form_name"]},
+        {"id": 0, "created": 1, "phone": 15, "name": 13, "qualif": 12, "campaign": 7, "adset": 5, "ad": 3,
+         "plat": 11, "form": 9},
     )
 
     leads = []
@@ -380,15 +397,15 @@ def process(leads_rows, meta_rows, sales_rows):
             id_attrib[lead_id] = attrib
         if phone and phone not in phone_attrib:
             phone_attrib[phone] = attrib
-        bucket = pretty_bucket(cell(row, lidx["bucket"]))
+        bucket = pretty_faixa(cell(row, lidx["qualif"]))
         leads.append({
             "d": lead_date,
             "src": src,
-            "plat": "ig" if src == "meta" else "—",
+            "plat": norm(cell(row, lidx["plat"])) or "—",
             "camp": camp,
             "adset": adset,
             "ad": ad,
-            "prof": bucket,
+            "prof": pretty_bucket(cell(row, lidx["form"])),
             "bucket": bucket,
             "q": 1 if is_qualificado(cell(row, lidx["qualif"])) else 0,
             "utm": 1 if campaign_valid else 0,
@@ -443,7 +460,7 @@ def process(leads_rows, meta_rows, sales_rows):
          # cliente. Sem ela, o Link nas tabelas Top/Piores vira "—".
          "link": ["creative instagram permalink", "instagram permalink", "permalink",
                   "creative link", "link do anuncio", "link do criativo"]},
-        {"day": 0, "campaign": 1, "adset": 2, "ad": 3, "spent": 7, "impr": 4, "clicks": 5, "leads": None, "pv": 6},
+        {"day": 0, "campaign": 1, "adset": 2, "ad": 3, "spent": 6, "impr": 4, "clicks": 5, "leads": None, "pv": None},
     )
 
     meta = []
@@ -496,29 +513,7 @@ def process(leads_rows, meta_rows, sales_rows):
         "sales": sales,
         # Anúncio -> permalink do criativo (aba Relatório).
         "ad_links": ad_links,
-        # Insights de Tráfego (texto pré-escrito, lido de relatorios.json). Preenchido
-        # em main() via load_briefings(); fica {} se relatorios.json não existir.
-        "briefings": {},
     }
-
-
-# --------------------------------------------------------------------------- #
-# Insights de Tráfego (aba Relatório)
-# --------------------------------------------------------------------------- #
-def load_briefings(path: str) -> dict:
-    """Lê build/relatorios.json. Estrutura:
-        {"generated_at": "...", "periodos": {"<preset>": {"html": "..."}, ...}}
-    Retorna o dict inteiro (ou {} se o arquivo não existir/for inválido).
-    A geração NÃO acontece aqui — este build só lê o texto já pronto, sem
-    chamar nenhuma API (custo zero no build/no navegador)."""
-    if not path or not os.path.exists(path):
-        return {}
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            obj = json.load(f)
-        return obj if isinstance(obj, dict) else {}
-    except (ValueError, OSError):
-        return {}
 
 
 # --------------------------------------------------------------------------- #
@@ -551,22 +546,21 @@ def render(data, template_path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--leads-file", help="CSV local da aba Leads (fonte única de leads)")
-    ap.add_argument("--meta-file", help="CSV local da aba Página 1 (Meta Ads)")
+    ap.add_argument("--meta-file", help="CSV local da aba Lead Ads (Meta Ads)")
     ap.add_argument("--sales-file", help="CSV local da aba Vendas (Compradores)")
     ap.add_argument("--template", default="build/template.html")
     ap.add_argument("--out", default="dist/index.html")
     args = ap.parse_args()
 
-    leads_rows = load_rows(sheet_url(SPREADSHEET_ID_FUNIL, SHEET_LEADS), args.leads_file)
-    sales_rows = load_rows(sheet_url(SPREADSHEET_ID_FUNIL, SHEET_VENDAS), args.sales_file)
+    leads_rows = load_rows(sheet_url(SPREADSHEET_ID_LEADS, SHEET_LEADS), args.leads_file)
+    # Vendas: mockup até a planilha de Compradores ser conectada.
+    if args.sales_file or SPREADSHEET_ID_VENDAS:
+        sales_rows = load_rows(sheet_url(SPREADSHEET_ID_VENDAS or "", SHEET_VENDAS), args.sales_file)
+    else:
+        sales_rows = []
     meta_rows = load_rows(sheet_url(SPREADSHEET_ID_META, SHEET_META), args.meta_file)
 
     data = process(leads_rows, meta_rows, sales_rows)
-
-    # Insights de Tráfego (texto pré-escrito) — lidos do arquivo versionado ao
-    # lado do template. Sem chamada de API no build.
-    briefings_path = os.path.join(os.path.dirname(os.path.abspath(args.template)), "relatorios.json")
-    data["briefings"] = load_briefings(briefings_path)
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:

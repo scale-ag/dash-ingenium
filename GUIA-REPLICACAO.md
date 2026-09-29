@@ -236,9 +236,6 @@ Ordem de colunas das tabelas de resultado (padrão do cliente):
    filtros, heatmap e gráficos não muda.
 3. Rode local com CSVs de teste, confira 2 páginas, tema claro/escuro e a
    multi-seleção. Commit → `main` → Actions publica → configure o cron-job.org.
-4. Siga o **checklist de novo cliente** no topo de `CLAUDE.md`/`AGENTS.md` — cobre
-   também a aba **Relatório** (Top/Piores anúncios, painel de metas e Insights de
-   Tráfego, ver `build/GUIA-RELATORIOS.md`). Este template **não inclui** automação
-   de geração dos Insights por IA (nenhum Worker/Action chama uma API de LLM); o
-   `build/relatorios.json` vem vazio e pode ser preenchido manualmente ou por uma
-   automação própria que você configurar depois.
+4. Siga a configuração descrita em `CLAUDE.md`/`AGENTS.md` — cobre também a aba
+   **Relatório** (painel de metas + Top Anúncios). Este repositório **não inclui**
+   Insights de Tráfego por IA (removidos a pedido do cliente).
