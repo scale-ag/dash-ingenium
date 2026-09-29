@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LP Método RaL Variação B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: segue a LP original do Método RaL. Hero preto, faixa amarela de números, seções alternando off-white/branco/preto, formulário em faixa amarela.
+   Visual único (não muda com tema claro/escuro), como a LP original. */
+:root{
+  --brand:#EBC334; --brand-ink:#11120F; --brand-dark:#B18B00;
+  --black:#0B0C0E; --black-2:#121315; --card-dark:#101113;
+  --ink:#10110F; --ink-2:#343630; --muted:#62645C; --gray:#8F9188;
+  --paper:#F4F3EE; --white:#FFFFFF; --line:rgba(16,17,15,.14); --line-dark:rgba(255,255,255,.12);
+  --pos:#5FBF75; --neg:#E5675A;
+  --note-bg:#E9EEFF; --note-ink:#1F2B66; --note-line:#7C8CD6;
+  --f-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--white);color:var(--ink);font:400 1rem/1.6 var(--f-sans);-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote{margin:0}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,4vw,48px)}
+.sec{padding-block:clamp(4.5rem,9vw,8.5rem)}
+.bg-paper{background:var(--paper)} .bg-white{background:var(--white)}
+.bg-dark{background:var(--black-2);color:#fff} .bg-brand{background:var(--brand);color:var(--brand-ink)}
+
+.h-xl{font-weight:900;font-size:clamp(2.15rem,5vw,4.9rem);line-height:.98;letter-spacing:-.035em;text-wrap:balance}
+.h-lg{font-weight:900;font-size:clamp(1.75rem,3.1vw,2.9rem);line-height:1.06;letter-spacing:-.02em;text-wrap:balance}
+.gray{color:var(--gray)}
+.lead{font-size:clamp(1.05rem,1rem + .35vw,1.25rem);line-height:1.65;color:var(--muted)}
+.kicker{font:600 .72rem/1.3 var(--f-sans);text-transform:uppercase;letter-spacing:.16em;color:var(--brand-dark)}
+.hl{background:var(--brand);color:var(--brand-ink);padding:0 .12em;border-radius:4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.75rem;background:var(--brand);color:var(--brand-ink);font-weight:700;letter-spacing:-.02em;font-size:clamp(.95rem,.9rem + .3vw,1.1rem);text-decoration:none;border:0;border-radius:999px;padding:1.05rem 2rem;min-height:3.5rem;cursor:pointer;text-align:center;transition:transform .3s ease,filter .3s ease}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.04)}
+.btn svg{width:1rem;height:1rem;flex-shrink:0}
+.btn-sm{padding:.6rem 1.2rem;min-height:2.75rem;font-size:.85rem}
+.btn-dark{background:var(--ink);color:#fff}
+.cta-note{font-size:.85rem;line-height:1.55;color:var(--muted);max-width:28rem}
+.cta{display:flex;flex-direction:column;align-items:flex-start;gap:.9rem}
+
+/* barra de revisão */
+.rbar{background:#fff;border-bottom:1px solid var(--line);font:500 .78rem/1.4 var(--f-mono);color:var(--muted)}
+.rbar .wrap{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;justify-content:space-between;padding-block:.6rem}
+.rbar b{color:var(--ink);font-weight:600}
+.toggle{font:500 .78rem/1 var(--f-mono);border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:.5rem .85rem;cursor:pointer}
+.toggle[aria-pressed="true"]{background:var(--note-bg);color:var(--note-ink);border-color:var(--note-line)}
+.note{display:none;background:var(--note-bg);color:var(--note-ink);border:1.5px dashed var(--note-line);border-radius:10px;padding:.85rem 1rem;font-size:.85rem;line-height:1.5;margin-top:1.5rem;max-width:44rem}
+.note b.t{display:block;font:600 .68rem/1.3 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem}
+.show-notes .note{display:block}
+
+/* hero */
+.hero{background:var(--black);color:#fff;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 70% at 85% 55%,rgba(235,195,52,.10),transparent 70%);pointer-events:none}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-block:1.4rem;position:relative;z-index:1}
+.logo{display:flex;align-items:center;gap:.7rem;font-weight:700;font-size:1.15rem;letter-spacing:-.02em;text-decoration:none}
+.logo svg{width:2rem;height:2rem}
+.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);gap:3rem;align-items:center;padding-block:clamp(2rem,5vw,4rem) clamp(3rem,6vw,5rem)}
+
+.hero-copy{display:flex;flex-direction:column;gap:1.4rem;min-width:0}
+.hero .eyebrow{color:var(--brand);font-weight:700;font-size:clamp(1rem,.9rem + .5vw,1.4rem);letter-spacing:-.01em}
+.pill{display:inline-flex;align-items:center;gap:.55rem;align-self:flex-start;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:.5rem 1rem;font-size:.8rem;font-weight:600}
+.pill svg{width:1rem;height:1rem}
+.hero h1{font-weight:900;font-size:clamp(2.1rem,1.2rem + 4.2vw,4.6rem);line-height:.96;letter-spacing:-.04em;text-wrap:balance;max-width:17ch}
+.hero h1 span{color:var(--brand)}
+.hero .sub{font-size:clamp(1.1rem,1rem + .5vw,1.45rem);line-height:1.5;color:rgba(255,255,255,.82);max-width:34rem}
+.hero .sub strong{color:#fff}
+.hero .cta-note{color:rgba(255,255,255,.62)}
+
+/* mockup financeiro (no lugar da foto) */
+.mock{background:#15171b;border:1px solid var(--line-dark);border-radius:18px;padding:1.1rem;box-shadow:0 40px 80px -30px rgba(0,0,0,.8);min-width:0}
+.mock-top{display:flex;align-items:center;gap:.4rem;margin-bottom:1rem}
+.mock-top i{width:.6rem;height:.6rem;border-radius:50%;background:#3a3c42;display:block}
+.mock-top span{margin-left:.6rem;font:500 .7rem/1 var(--f-mono);color:rgba(255,255,255,.45);background:rgba(255,255,255,.05);border-radius:6px;padding:.4rem .6rem;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.kpi{background:rgba(255,255,255,.04);border:1px solid var(--line-dark);border-radius:10px;padding:.7rem;min-width:0}
+.kpi small{display:block;font-size:.62rem;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi b{font:600 clamp(.8rem,.7rem + .4vw,1rem)/1.3 var(--f-mono);font-variant-numeric:tabular-nums}
+.kpi .p{color:var(--pos)} .kpi .n{color:var(--neg)} .kpi .y{color:var(--brand)}
+.dre{margin-top:.8rem;background:rgba(255,255,255,.03);border:1px solid var(--line-dark);border-radius:10px;padding:.8rem;font:500 .74rem/1 var(--f-mono);font-variant-numeric:tabular-nums}
+.dre-h{display:flex;justify-content:space-between;color:rgba(255,255,255,.5);font-family:var(--f-sans);font-size:.7rem;margin-bottom:.6rem}
+.dre-r{display:flex;justify-content:space-between;gap:1rem;padding-block:.45rem;border-top:1px solid var(--line-dark);color:rgba(255,255,255,.8)}
+.dre-r.tot{color:var(--brand);font-weight:600;border-top:2px solid rgba(235,195,52,.5)}
+.bars{margin-top:.8rem;display:flex;align-items:flex-end;gap:4px;height:5.5rem;padding:.6rem;border:1px solid var(--line-dark);border-radius:10px;background:rgba(255,255,255,.03)}
+.bars i{flex:1;border-radius:3px 3px 0 0;display:block;min-width:0}
+
+/* logos */
+.logos{background:var(--black);color:#fff;border-top:1px solid var(--line-dark);padding-block:1.6rem 1.8rem;overflow:hidden}
+.logos p{text-align:center;font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:1.1rem;padding-inline:16px}
+.track{display:flex;gap:3.5rem;width:max-content;animation:scroll 60s linear infinite}
+.track span{font-weight:800;font-size:1.3rem;letter-spacing:-.03em;color:rgba(255,255,255,.4);white-space:nowrap}
+@keyframes scroll{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.track{animation:none}.btn{transition:none}}
+
+/* números */
+.stats{background:var(--brand);color:var(--brand-ink);border-bottom:1px solid rgba(0,0,0,.1)}
+.stats .grid{max-width:1440px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1fr)}
+@media (min-width:640px){.stats .grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.stat{padding:2rem clamp(16px,2vw,28px);border-bottom:1px solid rgba(0,0,0,.15)}
+@media (min-width:640px){.stat{border-bottom:0;border-right:1px solid rgba(0,0,0,.15)}.stat:last-child{border-right:0}}
+.stat b{display:block;font-weight:900;font-size:clamp(1.9rem,3vw,3.4rem);letter-spacing:-.04em;line-height:1.1}
+.stat span{font-size:.95rem;font-weight:500}
+
+/* problema */
+.two{display:grid;grid-template-columns:minmax(0,1fr);gap:2rem}
+@media (min-width:1024px){.two{grid-template-columns:1.4fr .6fr;align-items:end;gap:4rem}}
+.two .lead{color:var(--ink-2)}
+.list6{margin-top:3.5rem;display:grid;grid-template-columns:minmax(0,1fr);border-bottom:1px solid var(--ink)}
+@media (min-width:768px){.list6{grid-template-columns:repeat(2,minmax(0,1fr))}.list6 li:nth-child(odd){border-right:1px solid var(--ink)}}
+.list6{list-style:none;padding:0}
+.list6 li{display:grid;grid-template-columns:2.5rem minmax(0,1fr);gap:.75rem;padding:1.4rem 1.75rem 1.4rem 1.75rem;border-top:1px solid var(--ink);font-size:1.12rem;line-height:1.45;color:var(--ink)}
+.list6 li::before{content:attr(data-n);font:500 .9rem/1.8 var(--f-mono);color:var(--gray)}
+.cost{margin-top:4rem;background:var(--ink);color:#fff;border-radius:24px;padding:clamp(1.75rem,4vw,2.75rem);display:flex;flex-direction:column;gap:1.5rem}
+.cost h3{font-weight:900;font-size:clamp(1.5rem,2.6vw,2.2rem);letter-spacing:-.03em;line-height:1.1;text-wrap:balance}
+.cost ul{list-style:none;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:1px;background:var(--line-dark);border-radius:14px;overflow:hidden}
+@media (min-width:900px){.cost ul{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.cost li{background:#191a18;padding:1.25rem;font-size:1.05rem;line-height:1.5;color:rgba(255,255,255,.85)}
+.cost li b{display:block;color:var(--brand);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:.4rem}
+.compare{margin-top:4rem;font-weight:800;font-size:clamp(1.35rem,2.4vw,2.1rem);line-height:1.2;letter-spacing:-.025em;max-width:34ch;text-wrap:balance}
+.compare .hl{font-weight:900}
+.proof-one{margin-top:4rem;display:grid;grid-template-columns:minmax(0,1fr);gap:1.5rem;align-items:center;background:var(--paper);border-radius:24px;padding:clamp(1.5rem,4vw,2.5rem)}
+@media (min-width:900px){.proof-one{grid-template-columns:.8fr 1.2fr;gap:3rem}}
+.proof-one h3{font-weight:900;font-size:clamp(1.4rem,2.4vw,2rem);letter-spacing:-.03em;line-height:1.15;text-wrap:balance}
+.proof-one .chat{border:0}
+.stage{margin-top:3.5rem;font:700 .8rem/1.3 var(--f-sans);letter-spacing:.14em;text-transform:uppercase;color:var(--brand-dark)}
+.stage + .rows{margin-top:1rem}
+.after{margin-top:2rem;display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem 2rem;padding:1.6rem;border:1px dashed var(--ink);border-radius:16px}
+@media (min-width:900px){.after{grid-template-columns:4.5rem minmax(0,1fr)}}
+.after .n{font:700 1rem/1.6 var(--f-sans);color:var(--brand-dark)}
+.after p{color:var(--ink-2);font-size:1.08rem}
+.bridge{margin-top:4.5rem;font-weight:800;font-size:clamp(1.6rem,3vw,2.9rem);line-height:1.1;letter-spacing:-.03em;max-width:24ch;text-wrap:balance}
+
+/* solução */
+.sol{display:grid;grid-template-columns:minmax(0,1fr);gap:4rem;align-items:center}
+@media (min-width:1024px){.sol{grid-template-columns:.9fr 1.1fr}}
+.sol-copy{display:flex;flex-direction:column;gap:1.5rem;min-width:0}
+.sol-copy .strong{font-weight:700;font-size:clamp(1.2rem,1.1rem + .5vw,1.6rem);line-height:1.3;letter-spacing:-.02em;color:var(--ink)}
+.laptop{background:#fff;border:10px solid #1a1b1e;border-radius:18px;box-shadow:0 50px 90px -40px rgba(0,0,0,.45);overflow:hidden;min-width:0}
+.laptop .bar{display:flex;gap:.4rem;align-items:center;background:#f6f6f4;padding:.6rem .8rem;border-bottom:1px solid #e7e7e2}
+.laptop .bar i{width:.6rem;height:.6rem;border-radius:50%;display:block}
+.laptop .bar span{margin-left:.5rem;font:500 .7rem/1 var(--f-mono);color:#6d6f66;background:#fff;border:1px solid #e7e7e2;border-radius:6px;padding:.35rem .6rem;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.laptop .body{padding:1rem}
+.lk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.lk div{border:1px solid #ecece7;border-radius:8px;padding:.6rem;min-width:0}
+.lk small{display:block;font-size:.6rem;color:#8f9188;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lk b{font:700 clamp(.8rem,.7rem + .4vw,1.05rem)/1.3 var(--f-sans);font-variant-numeric:tabular-nums}
+.chart{margin-top:.8rem;border:1px solid #ecece7;border-radius:8px;padding:.7rem}
+.chart small{font-size:.68rem;font-weight:600;color:var(--ink)}
+.chart svg{display:block;width:100%;height:auto;margin-top:.4rem}
+
+/* aprender (linhas numeradas) */
+.rows{list-style:none;padding:0;margin-top:3.5rem;border-bottom:1px solid var(--ink)}
+.rows li{display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem 2rem;padding-block:1.8rem;border-top:1px solid var(--ink)}
+@media (min-width:900px){.rows li{grid-template-columns:4.5rem minmax(0,.8fr) minmax(0,1.3fr)}}
+.rows .n{font:700 1rem/1.6 var(--f-sans);color:var(--brand-dark)}
+.rows h3{font-weight:700;font-size:1.3rem;letter-spacing:-.02em;line-height:1.35}
+.rows p{color:var(--muted);font-size:1.08rem;line-height:1.6}
+.inline-cta{margin-top:3.5rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.5rem}
+.inline-cta h3{font-weight:800;font-size:clamp(1.3rem,2vw,1.8rem);letter-spacing:-.03em}
+
+/* para quem */
+.fit{display:grid;grid-template-columns:minmax(0,1fr);gap:1.25rem;margin-top:3rem}
+@media (min-width:900px){.fit{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fit > div{border-radius:24px;padding:clamp(1.5rem,4vw,2.5rem);min-width:0}
+.fit .yes{background:var(--brand);color:var(--brand-ink)}
+.fit .no{background:#1b1c1f;color:#fff;border:1px solid var(--line-dark)}
+.fit h3{font-weight:900;font-size:1.6rem;letter-spacing:-.03em;margin-bottom:1.2rem}
+.fit ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:.9rem}
+.fit li{display:grid;grid-template-columns:1.5rem minmax(0,1fr);gap:.6rem;font-size:1.05rem;line-height:1.45}
+.fit .yes li::before{content:"✓";font-weight:900}
+.fit .no li::before{content:"✕";color:var(--neg);font-weight:900}
+
+/* depoimentos */
+.chats{display:grid;grid-template-columns:minmax(0,1fr);gap:1.25rem;margin-top:3rem}
+@media (min-width:900px){.chats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:22px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;min-width:0}
+.who{display:flex;align-items:center;gap:.8rem}
+.av{width:2.6rem;height:2.6rem;border-radius:50%;background:var(--ink);color:var(--brand);display:grid;place-items:center;font-weight:800;flex-shrink:0}
+.who b{display:block;font-size:.98rem} .who small{color:var(--muted);font-size:.82rem}
+.bubble{background:#E7F7DC;border-radius:14px 14px 14px 4px;padding:.9rem 1rem;font-size:.98rem;line-height:1.55;color:var(--ink);position:relative}
+.bubble time{display:block;text-align:right;font:500 .68rem/1 var(--f-mono);color:#6d6f66;margin-top:.4rem}
+.chat .cap{font-size:.88rem;color:var(--muted)}
+.quotes{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;margin-top:1.25rem;background:var(--line);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+@media (min-width:768px){.quotes{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.quotes figure{background:var(--paper);padding:1.4rem;display:flex;flex-direction:column;gap:.8rem}
+.quotes blockquote{font-weight:700;font-size:1.1rem;letter-spacing:-.02em;line-height:1.35}
+.quotes figcaption{font-size:.85rem;color:var(--muted)}
+
+/* investimento */
+.offer{display:grid;grid-template-columns:minmax(0,1fr);gap:1.5rem;margin-top:3rem;align-items:start}
+@media (min-width:1024px){.offer{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.price{background:var(--card-dark);color:#fff;border-radius:24px;padding:clamp(1.75rem,4vw,2.5rem);display:flex;flex-direction:column;gap:1.4rem}
+.price .kicker{color:var(--brand)}
+.price .big{font-weight:900;font-size:clamp(2.2rem,4vw,3.2rem);letter-spacing:-.04em;line-height:1}
+.price .alt{color:rgba(255,255,255,.7)}
+.price ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:.7rem;border-top:1px solid var(--line-dark);padding-top:1.3rem}
+.price li{display:grid;grid-template-columns:1.4rem minmax(0,1fr);gap:.5rem;color:rgba(255,255,255,.88)}
+.price li::before{content:"✓";color:var(--brand);font-weight:800}
+.bonus{background:#fff;border:1px solid var(--line);border-radius:24px;padding:clamp(1.75rem,4vw,2.5rem);display:flex;flex-direction:column;gap:1rem}
+.bonus .big{font-weight:900;font-size:clamp(1.8rem,3vw,2.4rem);letter-spacing:-.03em}
+.bonus s{color:var(--muted)}
+
+/* passos */
+.steps{list-style:none;padding:0;margin-top:3.5rem;display:grid;grid-template-columns:minmax(0,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+@media (min-width:900px){.steps{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.steps li{background:#fff;padding:1.5rem;display:flex;flex-direction:column;gap:.6rem}
+.steps .n{font:700 .9rem/1 var(--f-mono);color:var(--brand-dark)}
+.steps h3{font-weight:800;font-size:1.1rem;letter-spacing:-.02em;line-height:1.3}
+.steps p{color:var(--muted);font-size:.95rem}
+
+/* faq */
+.faq{margin-top:3rem;border-bottom:1px solid var(--line)}
+.faq details{border-top:1px solid var(--line)}
+.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:1rem;padding-block:1.35rem;font-weight:700;font-size:1.12rem;letter-spacing:-.02em}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-weight:400;font-size:1.5rem;line-height:1;color:var(--brand-dark)}
+.faq details[open] summary::after{content:"−"}
+.faq details p{padding-bottom:1.35rem;color:var(--muted);max-width:52rem}
+
+/* formulário */
+.formsec .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:3rem;align-items:start}
+@media (min-width:1024px){.formsec .grid{grid-template-columns:1fr 1fr}}
+.formsec .copy{display:flex;flex-direction:column;gap:1.4rem}
+.formsec .copy p{color:var(--ink-2);font-size:1.1rem}
+.badge{align-self:flex-start;background:var(--ink);color:var(--brand);border-radius:999px;padding:.45rem .9rem;font-size:.78rem;font-weight:700}
+.form{background:var(--card-dark);color:#fff;border-radius:22px;padding:clamp(1.5rem,4vw,2rem);display:flex;flex-direction:column;gap:1rem}
+.f{display:flex;flex-direction:column;gap:.45rem;min-width:0}
+.f label{font-size:.88rem;font-weight:500}
+.f label small{color:rgba(255,255,255,.5);font-weight:400}
+.f input,.f select{font:inherit;font-size:1rem;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:.8rem .95rem;width:100%;min-height:3rem;color-scheme:dark}
+.f select option{color:#111;background:#fff}
+.f input:focus-visible,.f select:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.pair{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem}
+@media (min-width:560px){.pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.form .btn{width:100%;margin-top:.4rem}
+.form .legal{font-size:.75rem;color:rgba(255,255,255,.55);text-align:center}
+.status{background:rgba(235,195,52,.14);border:1px solid rgba(235,195,52,.5);border-radius:12px;padding:.8rem 1rem;font-size:.9rem}
+
+footer{background:var(--black);color:rgba(255,255,255,.6);font-size:.85rem}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem;padding-block:2rem}
+footer b{color:#fff}
+</style>
+</head>
+<body style="margin:0">
+
+<div class="rbar">
+  <div class="wrap">
+    <span><b>Modelo de copy</b> · Método RaL · Variação B (público ciente do problema)</span>
+    <button class="toggle" id="toggleNotes" type="button" aria-pressed="false">Notas de copy: desligadas</button>
+  </div>
+</div>
+
+<div id="page">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <nav class="nav">
+      <a class="logo" href="#top" id="top">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="1.25" y="1.25" width="29.5" height="29.5" rx="8.5" fill="#0F1117" stroke="#EBC334" stroke-opacity=".55" stroke-width="1.5"/><rect x="8.6" y="18" width="3.4" height="6" rx="1.2" fill="#EBC334" opacity=".55"/><rect x="14.3" y="13" width="3.4" height="11" rx="1.2" fill="#EBC334" opacity=".8"/><rect x="20" y="8" width="3.4" height="16" rx="1.2" fill="#EBC334"/></svg>
+        Método RaL
+      </a>
+      <a class="btn btn-sm" href="#lead-v2">Quero conversar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </nav>
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Formação para Consultores Financeiros Empresariais (CFEs)</p>
+        <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Inscrições abertas para a primeira turma</span>
+        <h1>Sabe finanças? Aprenda a <span>vender consultoria</span> para empresas.</h1>
+        <p class="sub"><strong>Formação para montar sua consultoria financeira empresarial:</strong> como encontrar empresas, conduzir o diagnóstico, apresentar a proposta e fechar o contrato.</p>
+        <div class="cta">
+          <a class="btn" href="#lead-v2">Quero conversar com a equipe pelo WhatsApp <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+        <div class="note"><b class="t">Nota de copy · Hero</b>Regra dos 2 segundos: <b>o que é</b> (formação), <b>pra quem</b> (quem sabe finanças), <b>pra que</b> (vender consultoria para empresas). A headline ataca a trava real, que é vender. O texto do botão e a linha abaixo dele dizem exatamente o que acontece depois do clique.<br><br><b>Headlines alternativas para teste:</b> “Formação para montar sua consultoria financeira” · “Aprenda a vender consultoria financeira”.</div>
+      </div>
+    </div>
+  </div>
+  <div class="logos">
+    <p>Empresas que já passaram pelo método</p>
+    <div class="track" aria-hidden="true">
+      <span>Donz</span><span>Grupo DL COR</span><span>Espaçolaser</span><span>Gigio Fitness</span><span>GiOLaser</span><span>Granieri Engenharia</span><span>Greenjoy</span><span>Grupo Voto</span><span>Caracol Chocolates</span><span>Applausi</span><span>Alucell</span><span>Lake Vilas</span><span>Unoeste</span><span>Meu Cookie</span>
+      <span>Donz</span><span>Grupo DL COR</span><span>Espaçolaser</span><span>Gigio Fitness</span><span>GiOLaser</span><span>Granieri Engenharia</span><span>Greenjoy</span><span>Grupo Voto</span><span>Caracol Chocolates</span><span>Applausi</span><span>Alucell</span><span>Lake Vilas</span><span>Unoeste</span><span>Meu Cookie</span>
+    </div>
+  </div>
+</section>
+
+<!-- NÚMEROS -->
+<section class="stats" aria-label="Números da Rumo ao Lucro">
+  <div class="grid">
+    <div class="stat"><b>+100</b><span>empresas atendidas</span></div>
+    <div class="stat"><b>+R$ 1 bilhão</b><span>em planejamentos financeiros</span></div>
+    <div class="stat"><b>3 setores</b><span>comércio, serviços e indústria</span></div>
+  </div>
+</section>
+
+<!-- PROBLEMA -->
+<section class="sec bg-paper">
+  <div class="wrap">
+    <div class="two">
+      <h2 class="h-lg"><span class="gray">Você sabe finanças.</span><br>O que trava é <span class="hl">conseguir mais clientes.</span></h2>
+      <p class="lead">Você domina DRE, fluxo de caixa e indicadores. Mas na hora de transformar isso em cliente, alguma destas cenas acontece com você:</p>
+    </div>
+    <ul class="list6">
+      <li data-n="01">O empresário pergunta “quanto custa?” e você trava no preço</li>
+      <li data-n="02">Você sabe exatamente onde a empresa perde dinheiro, mas não sabe como começar essa conversa</li>
+      <li data-n="03">Faz um diagnóstico excelente e ouve “vou pensar”</li>
+      <li data-n="04">Cobra por hora, ou um valor que você sabe que é baixo</li>
+      <li data-n="05">Seus clientes vêm só por indicação, quando vêm</li>
+      <li data-n="06">Você é o mais técnico da sala e fatura menos do que deveria</li>
+    </ul>
+    <div class="cost">
+      <h3>Enquanto isso não muda, a conta não fecha.</h3>
+      <ul>
+        <li><b>Seu conhecimento</b>Vale muito para uma empresa, mas fica parado enquanto ninguém contrata.</li>
+        <li><b>O seu cliente</b>O empresário que precisava de você acaba contratando quem sabe vender.</li>
+        <li><b>O seu tempo</b>Cada mês que passa é mais um mês no mesmo lugar.</li>
+      </ul>
+    </div>
+    <p class="compare">Tem gente que sabe menos finanças que você e já vive de consultoria. <span class="hl">A diferença não é técnica. É saber vender.</span></p>
+    <p class="bridge"><span class="gray">Isso não se resolve estudando mais finanças.</span> Se resolve com um método para vender e entregar consultoria.</p>
+    <div class="note"><b class="t">Nota de copy · Problema</b>O público já sente a dor, mas ainda não conhece a solução. Antes de apresentar o método, a página descreve a trava com as palavras de quem está travado. Os 6 pontos viraram cenas que a pessoa reconhece, sem tom de acusação. Depois vêm o custo de ficar parado e a comparação com quem sabe menos e vende mais: é isso que dá urgência.</div>
+  </div>
+</section>
+
+<!-- SOLUÇÃO -->
+<section class="sec bg-white">
+  <div class="wrap sol">
+    <div class="sol-copy">
+      <h2 class="h-xl">Esse método existe. Se chama Método RaL.</h2>
+      <p class="lead">É a formação da Rumo ao Lucro para quem quer atuar ou crescer como consultor financeiro empresarial. Você aprende a jornada inteira da consultoria: posicionar, prospectar, diagnosticar, apresentar, vender, implantar, analisar, planejar e acompanhar.</p>
+      <p class="lead">A formação reúne processos usados em mais de 100 empresas reais, modelos prontos para aplicar, comunidade e o FinHub para organizar a execução.</p>
+      <p class="strong">O método nasceu do trabalho real com empresas, não de teoria.</p>
+      <div class="note"><b class="t">Nota de copy · Solução</b>Primeira aparição do método, como resposta direta ao problema da seção anterior. Todos os fatos vêm da LP original.</div>
+    </div>
+    <div class="laptop" role="img" aria-label="Exemplo de tela de fluxo de caixa diário">
+      <div class="bar"><i style="background:#ee6a5f"></i><i style="background:#f5bd4f"></i><i style="background:#61c454"></i><span>Fluxo de caixa diário</span></div>
+      <div class="body">
+        <div class="lk">
+          <div><small>Recebimentos</small><b style="color:#2f9e5b">R$ 94.548</b></div>
+          <div><small>Pagamentos</small><b style="color:#d9483b">R$ 111.440</b></div>
+          <div><small>Saldo projetado</small><b>R$ −12.421</b></div>
+        </div>
+        <div class="chart">
+          <small>Recebimentos e pagamentos por dia</small>
+          <svg viewBox="0 0 300 110" aria-hidden="true">
+            <line x1="0" y1="55" x2="300" y2="55" stroke="#e2e2dc" stroke-width="1"/>
+            <g fill="#5FBF75">
+              <rect x="6" y="30" width="9" height="25"/><rect x="30" y="42" width="9" height="13"/><rect x="54" y="20" width="9" height="35"/><rect x="78" y="38" width="9" height="17"/><rect x="102" y="26" width="9" height="29"/><rect x="126" y="44" width="9" height="11"/><rect x="150" y="16" width="9" height="39"/><rect x="174" y="36" width="9" height="19"/><rect x="198" y="28" width="9" height="27"/><rect x="222" y="40" width="9" height="15"/><rect x="246" y="22" width="9" height="33"/><rect x="270" y="34" width="9" height="21"/>
+            </g>
+            <g fill="#E5675A">
+              <rect x="17" y="55" width="9" height="18"/><rect x="41" y="55" width="9" height="34"/><rect x="65" y="55" width="9" height="12"/><rect x="89" y="55" width="9" height="40"/><rect x="113" y="55" width="9" height="16"/><rect x="137" y="55" width="9" height="26"/><rect x="161" y="55" width="9" height="10"/><rect x="185" y="55" width="9" height="30"/><rect x="209" y="55" width="9" height="20"/><rect x="233" y="55" width="9" height="36"/><rect x="257" y="55" width="9" height="14"/><rect x="281" y="55" width="9" height="24"/>
+            </g>
+            <polyline fill="none" stroke="#3b82c4" stroke-width="2" points="10,48 34,52 58,40 82,58 106,50 130,62 154,44 178,60 202,54 226,70 250,58 284,66"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="proof-one">
+      <h3>Na prática: uma aluna usou o diagnóstico do método numa reunião de prospecção e fechou o contrato.</h3>
+      <article class="chat">
+        <div class="who"><span class="av" aria-hidden="true">E</span><div><b>Eva</b><small>Me Finanças Empresariais</small></div></div>
+        <p class="bubble">Na quinta tive uma reunião de prospecção e, mesmo sem o sistema estar configurado, resolvi testar a parte do questionário e diagnóstico, resultado: cliente acabou de fechar o contrato<time>11:09</time></p>
+        <p class="cap">Testou o diagnóstico do Método RaL numa reunião de prospecção e fechou o contrato.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- O QUE VOCÊ VAI APRENDER -->
+<section class="sec bg-paper">
+  <div class="wrap">
+    <h2 class="h-xl">Do primeiro contato ao contrato fechado</h2>
+    <p class="lead" style="margin-top:1.2rem;max-width:44rem">A formação começa pela parte que mais trava: estruturar a oferta e vender.</p>
+    <p class="stage">Etapa 1 · Estruture e venda</p>
+    <ol class="rows">
+      <li><span class="n">01</span><h3>Profissão e posicionamento</h3><p>Entenda o papel do consultor, defina o cliente ideal, construa sua oferta e estabeleça um escopo profissional.</p></li>
+      <li><span class="n">02</span><h3>Prospecção e diagnóstico</h3><p>Aprenda a criar oportunidades, usar a Pesquisa EFA, qualificar empresas e conduzir reuniões comerciais.</p></li>
+      <li><span class="n">03</span><h3>Proposta e fechamento</h3><p>Transforme o diagnóstico em apresentação, proposta, investimento, contrato e próximo passo.</p></li>
+    </ol>
+    <div class="after"><span class="n">+</span><p><b>E depois do contrato, você também aprende a entregar:</b> implantação, análise financeira, planejamento, budget e reuniões mensais com o Relatório Triforce.</p></div>
+    <div class="inline-cta">
+      <h3>Quer ver como isso se aplica ao seu momento?</h3>
+      <a class="btn" href="#lead-v2">Quero conversar com a equipe pelo WhatsApp <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+    <div class="note"><b class="t">Nota de copy · Conteúdo</b>A venda (Etapa 1) fica em destaque e a entrega vira um resumo. Assim a página não parece “mais um curso de finanças”, que é o que acabamos de dizer que não resolve.</div>
+  </div>
+</section>
+
+<!-- PARA QUEM É -->
+<section class="sec bg-dark">
+  <div class="wrap">
+    <h2 class="h-xl">Para quem é</h2>
+    <div class="fit">
+      <div class="yes">
+        <h3>É para você se:</h3>
+        <ul>
+          <li>Você é contador, controller, analista ou trabalha com BPO financeiro</li>
+          <li>Você é profissional de finanças e quer atuar com empresas</li>
+          <li>Você já atende clientes, mas ainda trabalha sem processo definido</li>
+          <li>Você é gestor financeiro e quer migrar para consultoria</li>
+          <li>Você está disposto a prospectar, estudar e aplicar</li>
+        </ul>
+      </div>
+      <div class="no">
+        <h3>Não é para você se:</h3>
+        <ul>
+          <li>Você procura promessa de faturamento sem execução</li>
+          <li>Você quer apenas assistir às aulas</li>
+          <li>Você não pretende prospectar ou conversar com empresários</li>
+          <li>Você não quer seguir método, processo e rotina de acompanhamento</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note"><b class="t">Nota de copy · Filtro</b>Filtra antes do formulário. Quem não é o público sai aqui e não vira lead desqualificado, o que protege a taxa de MQL e o custo por MQL.</div>
+  </div>
+</section>
+
+<!-- PROVA -->
+<section class="sec bg-paper">
+  <div class="wrap">
+    <h2 class="h-xl">Quem já está aplicando</h2>
+    <p class="lead" style="margin-top:1.2rem;max-width:44rem">Consultores que fazem o Método RaL e já aplicam com os próprios clientes.</p>
+    <div class="chats">
+      <article class="chat">
+        <div class="who"><span class="av" aria-hidden="true">A</span><div><b>Antonio Marcos</b><small>Especialista em Finanças</small></div></div>
+        <p class="bubble">Acompanhei, como ouvinte, uma reunião real de fechamento conduzida pelo Lucas Nigro. Essa experiência me trouxe insights valiosos sobre como me posicionar e conversar com meus futuros clientes.<time>16:06</time></p>
+        <p class="cap">Migrou da carreira CLT para a consultoria financeira empresarial.</p>
+      </article>
+      <article class="chat">
+        <div class="who"><span class="av" aria-hidden="true">V</span><div><b>Vanessa Haack</b><small>BPO Financeiro</small></div></div>
+        <p class="bubble">O Lucas tem passado por conteúdos importantes, especialmente como estruturar uma consultoria financeira, como usar o sistema, dando dicas importantes sobre o que fazer e o que não fazer.<time>13:21</time></p>
+        <p class="cap">Aluna do Método RaL, atua com BPO financeiro.</p>
+      </article>
+      <article class="chat">
+        <div class="who"><span class="av" aria-hidden="true">C</span><div><b>Carolina Avila</b><small>Contadora</small></div></div>
+        <p class="bubble">Se não tivesse essa formação, iria por um caminho totalmente diferente.. absorvendo várias demandas operacionais porque tenho muito esse perfil de abraçar tudo pra mim.<time>22:26</time></p>
+        <p class="cap">Sobre o que mudou na maneira de escolher quais demandas assumir.</p>
+      </article>
+    </div>
+    <div class="quotes">
+      <figure><blockquote>“A consultoria se pagou em 13 minutos.”</blockquote><figcaption>João Leber · Caracol Chocolates</figcaption></figure>
+      <figure><blockquote>“Trouxeram clareza para os nossos números.”</blockquote><figcaption>Almir Zuchi · Grupo DL Cor</figcaption></figure>
+      <figure><blockquote>“A gente não toma nenhuma decisão financeira sem falar com os meninos.”</blockquote><figcaption>Sócios da Donz</figcaption></figure>
+    </div>
+    <div class="note"><b class="t">Nota de copy · Prova</b>Os depoimentos de alunos vêm primeiro porque falam da trava de venda (Eva fechou contrato, Antonio aprendeu a se posicionar). Os de empresas clientes ficam como prova de que o método funciona na entrega.</div>
+  </div>
+</section>
+
+<!-- INVESTIMENTO -->
+<section class="sec bg-white">
+  <div class="wrap">
+    <p class="kicker">Primeira turma</p>
+    <h2 class="h-xl" style="margin-top:.8rem">A condição de quem entra agora</h2>
+    <div class="offer">
+      <div class="price">
+        <p class="kicker">Investimento</p>
+        <div><p class="big">12x de R$ 206,54</p><p class="alt" style="margin-top:.5rem">ou R$ 1.997 à vista</p></div>
+        <ul>
+          <li>12 meses de acesso à formação</li>
+          <li>12 meses de participação na comunidade</li>
+          <li>Encontros online a cada 15 dias</li>
+          <li>Especialistas convidados</li>
+          <li>Modelos comerciais, operacionais e financeiros</li>
+          <li>FinHub incluído para os 3 primeiros clientes, durante 12 meses</li>
+        </ul>
+        <a class="btn" href="#lead-v2">Quero conversar com a equipe pelo WhatsApp <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <p class="alt" style="font-size:.8rem">Condição válida para as inscrições da primeira turma.</p>
+      </div>
+      <div class="bonus">
+        <p class="kicker">Bônus da primeira turma</p>
+        <p class="big">FinHub incluído para os 3 primeiros clientes</p>
+        <p class="lead">Durante os 12 meses da formação, sem custo adicional.</p>
+        <p>Valor equivalente em licenças: <b>R$ 3.564</b><br><span style="color:var(--muted)">R$ 297/mês (até 3 clientes) × 12 meses</span></p>
+        <p style="color:var(--muted);font-size:.92rem">Depois dos 12 meses, o sistema passa a ter o valor vigente, hoje R$ 297 por mês para até 3 clientes. O valor para clientes adicionais é apresentado no bate-papo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section class="sec bg-paper">
+  <div class="wrap">
+    <h2 class="h-xl">O que acontece depois que você clica</h2>
+    <p class="lead" style="margin-top:1.2rem;max-width:44rem">Não existe checkout nesta página. O próximo passo é uma conversa com a nossa equipe, sem robô e sem script de venda.</p>
+    <ol class="steps">
+      <li><span class="n">01</span><h3>Você preenche o formulário</h3><p>Nome e WhatsApp bastam. Leva menos de um minuto.</p></li>
+      <li><span class="n">02</span><h3>Nossa equipe te chama</h3><p>Pelo WhatsApp, para combinar o melhor horário.</p></li>
+      <li><span class="n">03</span><h3>Conversamos online</h3><p>Entendemos seu momento profissional, sua rotina atual e seus objetivos.</p></li>
+      <li><span class="n">04</span><h3>Apresentamos a formação</h3><p>Método, comunidade, encontros, FinHub e as condições da primeira turma.</p></li>
+      <li><span class="n">05</span><h3>Você decide</h3><p>Sem compromisso. Se não fizer sentido para o seu momento, a gente diz isso com clareza.</p></li>
+    </ol>
+    <div class="note"><b class="t">Nota de copy · Próximo passo</b>Aumenta o nível de consciência antes do clique: o lead já sabe que vai receber uma mensagem no WhatsApp e que é uma conversa, não uma compra.</div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec bg-white">
+  <div class="wrap">
+    <h2 class="h-xl">Perguntas frequentes</h2>
+    <div class="faq">
+      <details open><summary>Não sou bom de vendas. Serve para mim?</summary><p>Serve. A primeira etapa inteira da formação é sobre estruturar a oferta e vender. Você recebe roteiros de reunião, a Pesquisa EFA para conduzir o diagnóstico e modelos de proposta e contrato. Um dos alunos, o Antonio, acompanhou como ouvinte uma reunião real de fechamento conduzida pelo Lucas.</p></details>
+      <details open><summary>Preciso já atuar como consultor?</summary><p>Não. A formação atende tanto quem está iniciando quanto quem já possui clientes e precisa organizar melhor sua operação.</p></details>
+      <details open><summary>Preciso ter conhecimento financeiro?</summary><p>É necessário ter uma base financeira ou disposição real para estudar. O método organiza a aplicação prática, mas não substitui conhecimento técnico, responsabilidade e julgamento profissional.</p></details>
+      <details><summary>Qual é o investimento?</summary><p>O investimento da primeira turma é de 12x de R$ 206,54 (ou R$ 1.997 à vista). As formas de pagamento são apresentadas no bate-papo.</p></details>
+      <details><summary>Por quanto tempo tenho acesso?</summary><p>O acesso à formação e à comunidade é de 12 meses, incluindo os conteúdos novos publicados durante o período.</p></details>
+      <details><summary>Como funcionam os encontros?</summary><p>Os encontros acontecem online a cada 15 dias, com orientações práticas, dúvidas, casos reais, aprofundamentos e especialistas convidados. As gravações ficam disponíveis durante os 12 meses.</p></details>
+      <details><summary>Quando a turma começa?</summary><p>A primeira turma começa logo após o encerramento das inscrições. A data exata é confirmada no bate-papo, junto com o cronograma dos primeiros encontros.</p></details>
+      <details><summary>O FinHub está incluído?</summary><p>Para as inscrições da primeira turma, o FinHub está incluído para os 3 primeiros clientes durante os 12 meses de acesso à formação e à comunidade.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FORMULÁRIO -->
+<section class="sec bg-brand formsec" id="lead-v2">
+  <div class="wrap grid">
+    <div class="copy">
+      <span class="badge">Condição válida para as inscrições da primeira turma</span>
+      <h2 class="h-xl">Sabe finanças? Aprenda a vender consultoria.</h2>
+      <p><b>Daqui a 6 meses você pode estar no mesmo lugar, ou com a sua consultoria rodando.</b> O primeiro passo é uma conversa: preencha seus dados e nossa equipe te chama no WhatsApp.</p>
+      <p><b>Não é checkout. É uma conversa, sem compromisso.</b></p>
+      <div class="note"><b class="t">Nota de copy · Formulário</b>Mesmas perguntas e opções do formulário original, para o lead cair na mesma planilha e a classificação de MQL continuar igual. O botão diz o que acontece depois do envio.</div>
+    </div>
+    <form class="form" id="leadForm" novalidate>
+      <div class="f"><label for="f-nome">Seu nome</label><input id="f-nome" name="nome" type="text" autocomplete="name" required></div>
+      <div class="pair">
+        <div class="f"><label for="f-whats">WhatsApp</label><input id="f-whats" name="whatsapp" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" required></div>
+        <div class="f"><label for="f-email">Email <small>(opcional)</small></label><input id="f-email" name="email" type="email" autocomplete="email"></div>
+      </div>
+      <div class="f"><label for="f-atende">Você já atende empresas?</label>
+        <select id="f-atende" name="atende_empresas" required><option value="">Selecione</option><option>Ainda não</option><option>Sim, como consultor</option><option>Sim, em BPO financeiro</option><option>Sim, como contador/controller/gestor</option><option>Outro</option></select></div>
+      <div class="f"><label for="f-clientes">Quantos clientes empresariais você atende hoje?</label>
+        <select id="f-clientes" name="clientes_empresariais" required><option value="">Selecione</option><option>Nenhum</option><option>1 a 3</option><option>4 a 10</option><option>Mais de 10</option></select></div>
+      <div class="f"><label for="f-obj">Qual é o seu principal objetivo com a formação?</label>
+        <select id="f-obj" name="objetivo_formacao" required><option value="">Selecione</option><option>Começar na consultoria financeira empresarial</option><option>Conquistar mais clientes</option><option>Melhorar minha entrega</option><option>Organizar e padronizar minha operação</option><option>Escalar minha consultoria</option></select></div>
+      <div class="f"><label for="f-momento">Qual é o seu momento profissional? <small>(opcional)</small></label><input id="f-momento" name="momento" type="text"></div>
+      <button class="btn" type="submit">Quero que a equipe me chame no WhatsApp <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <p class="legal">Ao enviar, você aceita receber contato do Rumo ao Lucro pelo WhatsApp informado.</p>
+      <p class="status" id="formStatus" role="status" hidden></p>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap"><span><b>Método RaL</b> · Uma formação da Rumo ao Lucro</span><span>© 2026 Rumo ao Lucro.</span></div>
+</footer>
+</div>
+
+<script>
+(function () {
+  var page = document.getElementById('page');
+  var btn = document.getElementById('toggleNotes');
+  function set(on) {
+    page.classList.toggle('show-notes', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.textContent = 'Notas de copy: ' + (on ? 'ligadas' : 'desligadas');
+    try { localStorage.setItem('ral-b-notes', on ? '1' : '0'); } catch (e) {}
+  }
+  var start = false;
+  try { start = localStorage.getItem('ral-b-notes') === '1'; } catch (e) {}
+  set(start);
+  btn.addEventListener('click', function () { set(!page.classList.contains('show-notes')); });
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var t = document.getElementById(a.getAttribute('href').slice(1));
+    if (!t) return;
+    e.preventDefault();
+    t.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    if (t.id === 'lead-v2') setTimeout(function () { document.getElementById('f-nome').focus({ preventScroll: true }); }, reduce ? 0 : 500);
+  });
+
+  var form = document.getElementById('leadForm');
+  var status = document.getElementById('formStatus');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    status.hidden = false;
+    status.textContent = 'Modelo de página: nada foi enviado. No site real, este envio cadastra o lead e a equipe chama no WhatsApp para marcar a conversa.';
+  });
+})();
+</script>
+</body>
+</html>
