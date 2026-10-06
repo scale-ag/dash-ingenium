@@ -8,7 +8,7 @@ Gera a dashboard estatica (index.html) do cliente Ingenium Advisers
     leads (formulario nativo do Meta). Cada linha ja traz campaign_name /
     adset_name / ad_name, que cruzam 1:1 com Campaign Name / Ad Set Name /
     Ad Name do Meta Ads.
-  - "Lead Ads" (planilha Meta Ads, SPREADSHEET_ID_META): investimento,
+  - "IA | QUERIES | GIACO" (planilha Meta Ads, SPREADSHEET_ID_META): investimento,
     impressoes e cliques do gerenciador.
   - Compradores/Vendas: AINDA NAO CONECTADA (SPREADSHEET_ID_VENDAS = None).
     A estrutura de Vendas/CAC/Faturamento/ROAS fica na tela como mockup
@@ -50,8 +50,8 @@ SHEET_LEADS = "Lead Ads"
 SPREADSHEET_ID_VENDAS = None
 SHEET_VENDAS = "Vendas"
 # Planilha do Meta Ads (separada da planilha de Leads).
-SPREADSHEET_ID_META = "1MhIiyKadHKOqCQ0l5zEOD2gB7FqI8TNJVOQZhxBhmLY"
-SHEET_META = "Lead Ads"
+SPREADSHEET_ID_META = "1urfcE0E-FnZ9UfctisN-LmXAO-7H28Sb0g13ft_qN1M"
+SHEET_META = "IA | QUERIES | GIACO"
 EXPORT_URL = "https://docs.google.com/spreadsheets/d/{sid}/gviz/tq?tqx=out:csv&sheet={sheet}"
 
 # Identificação do cliente/conta (usada só em textos/relatórios — não afeta o cruzamento de dados).
@@ -460,7 +460,7 @@ def process(leads_rows, meta_rows, sales_rows):
          # cliente. Sem ela, o Link nas tabelas Top/Piores vira "—".
          "link": ["creative instagram permalink", "instagram permalink", "permalink",
                   "creative link", "link do anuncio", "link do criativo"]},
-        {"day": 0, "campaign": 1, "adset": 2, "ad": 3, "spent": 6, "impr": 4, "clicks": 5, "leads": None, "pv": None},
+        {"day": 0, "campaign": 1, "adset": 2, "ad": 3, "spent": 4, "impr": 5, "clicks": 6, "leads": None, "pv": None},
     )
 
     meta = []
@@ -546,7 +546,7 @@ def render(data, template_path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--leads-file", help="CSV local da aba Leads (fonte única de leads)")
-    ap.add_argument("--meta-file", help="CSV local da aba Lead Ads (Meta Ads)")
+    ap.add_argument("--meta-file", help="CSV local da aba IA | QUERIES | GIACO (Meta Ads)")
     ap.add_argument("--sales-file", help="CSV local da aba Vendas (Compradores)")
     ap.add_argument("--template", default="build/template.html")
     ap.add_argument("--out", default="dist/index.html")

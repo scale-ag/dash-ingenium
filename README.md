@@ -37,9 +37,9 @@ Lógica em `build/build.py` → `MQL_FAIXAS` / `is_qualificado()`.
   `campaign_id` · `campaign_name` · `form_id` · `form_name` · `is_organic` ·
   `platform` · `qual_é_o_faturamento_anual_da_sua_empres?_` · `nome_completo` ·
   `email` · `phone_number` · `lead_status`
-- **Meta Ads** (`1MhIiyKadHKOqCQ0l5zEOD2gB7FqI8TNJVOQZhxBhmLY`), aba **Lead Ads**:
-  `Day` · `Campaign Name` · `Ad Set Name` · `Ad Name` · `Impressions` ·
-  `Link Clicks` · `Amount Spent` (sem Landing Page Views → Page View/ConvLP ficam "-").
+- **Meta Ads** (`1urfcE0E-FnZ9UfctisN-LmXAO-7H28Sb0g13ft_qN1M`), aba **IA | QUERIES | GIACO**:
+  `Day` · `Campaign Name` · `Ad Set Name` · `Ad Name` · `Amount Spent` ·
+  `Impressions` · `Link Clicks` · `Reach` (sem Landing Page Views → Page View/ConvLP ficam "-").
 - **Compradores**: ainda não conectada — Vendas/CAC/Faturamento/ROAS aparecem como
   mockup ("sem dado"). Para ligar: preencher `SPREADSHEET_ID_VENDAS`/`SHEET_VENDAS`
   em `build/build.py`.

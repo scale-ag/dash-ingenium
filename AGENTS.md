@@ -4,7 +4,7 @@
 
 - Repositório `scale-ag/dash-ingenium` · Pages `https://scale-ag.github.io/dash-ingenium/`.
 - **`build/build.py`**: `SPREADSHEET_ID_LEADS` (aba "Lead Ads"), `SPREADSHEET_ID_META`
-  (aba "Lead Ads"), `SPREADSHEET_ID_VENDAS = None` (mockup), `CLIENT_NAME = "Ingenium Advisers"`,
+  (aba "IA | QUERIES | GIACO"), `SPREADSHEET_ID_VENDAS = None` (mockup), `CLIENT_NAME = "Ingenium Advisers"`,
   `MAIN_PRODUCT = "Funil de Sessão Estratégica"`, `MAIN_PRODUCT_PREFIX = "IA"`, `TAX_FACTOR = 1.1385`.
 - **MQL:** coluna M (faturamento anual) ∈ {`de_r$_200.000,00_a_r$_500.000,00`, `acima_de_r$_500.000,00`}.
 - **Cruzamento:** `Campaign Name = campaign_name` · `Ad Set Name = adset_name` · `Ad Name = ad_name`.

@@ -34,8 +34,8 @@ nativo do Meta com o gerenciador de anúncios e se atualiza sozinho a cada ~30 m
 `qual_é_o_faturamento_anual_da_sua_empres?_` (**coluna M**, MQL) · `nome_completo` ·
 `email` · `phone_number` · `lead_status`
 
-**Meta Ads** — `SPREADSHEET_ID_META = "1MhIiyKadHKOqCQ0l5zEOD2gB7FqI8TNJVOQZhxBhmLY"`, aba **"Lead Ads"**:
-`Day` · `Campaign Name` · `Ad Set Name` · `Ad Name` · `Impressions` · `Link Clicks` · `Amount Spent`
+**Meta Ads** — `SPREADSHEET_ID_META = "1urfcE0E-FnZ9UfctisN-LmXAO-7H28Sb0g13ft_qN1M"`, aba **"IA | QUERIES | GIACO"**:
+`Day` · `Campaign Name` · `Ad Set Name` · `Ad Name` · `Amount Spent` · `Impressions` · `Link Clicks` · `Reach`
 
 **Compradores** — ainda não conectada (`SPREADSHEET_ID_VENDAS = None`). `build_purchases()`
 continua pronto (colunas esperadas: `lead_id`/`whatsapp`/`pago_em`/`valor`/`comprador`/`pago`).
