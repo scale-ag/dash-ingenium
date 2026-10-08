@@ -28,11 +28,14 @@ nativo do Meta com o gerenciador de anúncios e se atualiza sozinho a cada ~30 m
 
 ## Fontes de dados (Google Sheets, busca por NOME de aba)
 
-**Leads** — `SPREADSHEET_ID_LEADS = "1Gw6XZSL8OG4VYs8rEP2_vHvYLhbT4uhJFBOlLRyBZIg"`, aba **"Lead Ads"**:
+**Leads** — `SPREADSHEET_ID_LEADS = "1Gw6XZSL8OG4VYs8rEP2_vHvYLhbT4uhJFBOlLRyBZIg"`, abas `SHEETS_LEADS` =
+**"Lead Ads"** (form V1) + **"IA | FORM-01 [V2]"**, unificadas por `load_leads()` (cabeçalho
+canônico `LEADS_CANON`, dedupe por `id`, aba com falha = aviso e segue). Colunas do V1:
 `id` · `created_time` · `ad_id` · `ad_name` · `adset_id` · `adset_name` · `campaign_id` ·
 `campaign_name` · `form_id` · `form_name` · `is_organic` · `platform` (fb/ig/an) ·
 `qual_é_o_faturamento_anual_da_sua_empres?_` (**coluna M**, MQL) · `nome_completo` ·
-`email` · `phone_number` · `lead_status`
+`email` · `phone_number` · `lead_status`. V2: igual, mas nome em `full_name` e faturamento em
+`qual_é_o_seu_faturamento_mensal?` (coluna M; `qual_foi_o_seu_faturamento_...` NÃO é usada).
 
 **Meta Ads** — `SPREADSHEET_ID_META = "1urfcE0E-FnZ9UfctisN-LmXAO-7H28Sb0g13ft_qN1M"`, aba **"IA | QUERIES | GIACO"**:
 `Day` · `Campaign Name` · `Ad Set Name` · `Ad Name` · `Amount Spent` · `Impressions` · `Link Clicks` · `Reach`
@@ -41,8 +44,9 @@ nativo do Meta com o gerenciador de anúncios e se atualiza sozinho a cada ~30 m
 continua pronto (colunas esperadas: `lead_id`/`whatsapp`/`pago_em`/`valor`/`comprador`/`pago`).
 
 ### Regra de MQL
-Coluna M ∈ {`de_r$_200.000,00_a_r$_500.000,00`, `acima_de_r$_500.000,00`} → MQL;
-`até_r$_200.000,00` → não qualificado. `build.py` → `MQL_FAIXAS`/`is_qualificado()`.
+Faturamento (coluna M, V1 e V2) acima de R$ 200 mil → MQL, sem depender do texto exato:
+vazio ou começando com "até" (sem acento) = não qualificado; outra faixa com número = MQL;
+lead de teste da Meta (`<test lead`) nunca conta. `build.py` → `is_qualificado()`.
 O gráfico "Leads por faturamento anual" usa a mesma coluna (rótulos amigáveis em `FAIXA_LABELS`).
 
 ### Cruzamento Leads × Meta Ads
@@ -75,7 +79,7 @@ data, filtro cruzado, KPIs, tabelas, gráficos, heatmap, imposto) roda no navega
 ## Rodar/testar local
 
 ```bash
-python build/build.py --leads-file leads.csv --meta-file meta.csv --out dist/index.html
+python build/build.py --leads-file lead_ads.csv --leads-file form_v2.csv --meta-file meta.csv --out dist/index.html
 # (o sandbox do agente NÃO alcança docs.google.com; use CSVs locais para testar.
 #  O runner do GitHub Actions tem internet e busca os CSVs ao vivo.)
 ```

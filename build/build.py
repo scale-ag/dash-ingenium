@@ -4,20 +4,23 @@
 Gera a dashboard estatica (index.html) do cliente Ingenium Advisers
 (Funil de Sessao Estrategica · sigla de campanha "IA") a partir de 2 planilhas:
 
-  - "Lead Ads" (planilha de Leads, SPREADSHEET_ID_LEADS): fonte UNICA de
-    leads (formulario nativo do Meta). Cada linha ja traz campaign_name /
-    adset_name / ad_name, que cruzam 1:1 com Campaign Name / Ad Set Name /
-    Ad Name do Meta Ads.
+  - "Lead Ads" (form IA | FORM-01 [V1]) e "IA | FORM-01 [V2]" (planilha de
+    Leads, SPREADSHEET_ID_LEADS): leads dos 2 formularios nativos do Meta.
+    Cada aba tem seu proprio cabecalho; load_leads() mapeia as duas para um
+    cabecalho canonico (LEADS_CANON), junta e remove duplicados por id antes
+    do process(). Cada linha ja traz campaign_name / adset_name / ad_name,
+    que cruzam 1:1 com Campaign Name / Ad Set Name / Ad Name do Meta Ads.
   - "IA | QUERIES | GIACO" (planilha Meta Ads, SPREADSHEET_ID_META): investimento,
     impressoes e cliques do gerenciador.
   - Compradores/Vendas: AINDA NAO CONECTADA (SPREADSHEET_ID_VENDAS = None).
     A estrutura de Vendas/CAC/Faturamento/ROAS fica na tela como mockup
     (zerada/"-"); basta preencher o ID/aba para ligar o cruzamento.
 
-Criterio de Lead Qualificado (MQL): coluna M da aba Leads
-("qual_e_o_faturamento_anual_da_sua_empres?_") em
-"de_r$_200.000,00_a_r$_500.000,00" ou "acima_de_r$_500.000,00"
-(nao-qualificado = "ate_r$_200.000,00").
+Criterio de Lead Qualificado (MQL), igual para os 2 forms: faturamento acima
+de R$ 200 mil. Coluna M de cada aba (V1: "qual_e_o_faturamento_anual_...";
+V2: "qual_e_o_seu_faturamento_..."). Sem depender do texto exato: vazio ou
+comecando com "ate" = nao qualificado; qualquer outra faixa com numero = MQL.
+Lead de teste da Meta ("<test lead") nunca conta.
 
 Este script apenas LE as planilhas (export CSV publico, buscado por NOME da
 aba — sem depender de gid) e emite os REGISTROS BRUTOS (leads[], meta[] e
@@ -25,8 +28,8 @@ sales[]) dentro do HTML. Todos os filtros, agregacoes, KPIs, tabelas e
 graficos sao calculados no navegador (client-side em app.js). Nunca escreve
 nada de volta nas planilhas.
 
-Teste local: --leads-file / --meta-file / --sales-file apontando para CSVs
-baixados.
+Teste local: --leads-file (repetivel, 1 CSV por aba de leads) / --meta-file /
+--sales-file apontando para CSVs baixados.
 """
 from __future__ import annotations
 
@@ -42,9 +45,10 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
-# Planilha de Leads (formulario nativo Meta) — busca por nome de aba, sem gid.
+# Planilha de Leads (formularios nativos Meta) — busca por nome de aba, sem gid.
+# Uma aba por formulario; todas sao lidas e unificadas em load_leads().
 SPREADSHEET_ID_LEADS = "1Gw6XZSL8OG4VYs8rEP2_vHvYLhbT4uhJFBOlLRyBZIg"
-SHEET_LEADS = "Lead Ads"
+SHEETS_LEADS = ["Lead Ads", "IA | FORM-01 [V2]"]   # V1, V2
 # Planilha de Compradores — ainda nao conectada (mockup). Preencher para ligar
 # o cruzamento de vendas (colunas esperadas em build_purchases()).
 SPREADSHEET_ID_VENDAS = None
@@ -186,13 +190,16 @@ def is_yes(v: str | None) -> bool:
     return norm(v) in ("sim", "s", "yes", "true", "1")
 
 
-# Faixas de faturamento anual (coluna M da aba Leads) que contam como MQL.
-MQL_FAIXAS = {"de_r$_200.000,00_a_r$_500.000,00", "acima_de_r$_500.000,00"}
-
-
 def is_qualificado(v: str | None) -> bool:
-    """Critério de MQL: faturamento anual (coluna M) acima de R$ 200 mil."""
-    return norm(v) in {norm(f) for f in MQL_FAIXAS}
+    """Critério de MQL (V1 e V2): faturamento acima de R$ 200 mil.
+    Não depende do texto exato da faixa (V1 "de_r$_200.000,00_a_...",
+    V2 "até_r$_200_mil", ...): vazio ou começando com "até" (sem acento) =
+    não qualificado; qualquer outra faixa com número = MQL. Lead de teste da
+    Meta ("<test lead ...>") nunca conta."""
+    n = norm(v)
+    if not n or is_test_lead(n) or n.startswith("ate"):
+        return False
+    return bool(re.search(r"\d", n))
 
 
 FAIXA_LABELS = {
@@ -204,7 +211,14 @@ FAIXA_LABELS = {
 
 def pretty_faixa(v: str) -> str:
     s = (v or "").strip()
-    return FAIXA_LABELS.get(norm(s), s) if s else "Sem resposta"
+    if not s:
+        return "Sem resposta"
+    if norm(s) in FAIXA_LABELS:
+        return FAIXA_LABELS[norm(s)]
+    # Faixa fora do mapa (ex. V2 "até_r$_200_mil") -> "Até R$ 200 mil".
+    s = re.sub(r"\s+", " ", s.replace("_", " ")).strip()
+    s = re.sub(r"r\$", "R$", s, flags=re.I)
+    return s[:1].upper() + s[1:]
 
 
 def pretty_bucket(v: str) -> str:
@@ -302,6 +316,73 @@ def cell(row, i):
 
 
 # --------------------------------------------------------------------------- #
+# Leads: varias abas (1 por formulario) -> tabela unica com cabecalho canonico
+# --------------------------------------------------------------------------- #
+# Coluna canonica -> nomes aceitos no cabecalho de cada aba (normalizados, sem
+# acento). Casa por igualdade e, na falta, por PREFIXO — nunca por substring,
+# para a pergunta de faturamento do V2 nao cair em "qual_foi_o_seu_faturamento
+# _do_ano_anterior?" (outra pergunta, ignorada).
+LEADS_CANON = {
+    "id": ["id"],
+    "created_time": ["created_time"],
+    "campaign_name": ["campaign_name"],
+    "adset_name": ["adset_name"],
+    "ad_name": ["ad_name"],
+    "platform": ["platform"],
+    "form_name": ["form_name"],
+    "phone_number": ["phone_number"],
+    "nome": ["nome_completo", "full_name"],                      # V1, V2
+    "faturamento": ["qual_e_o_faturamento_anual", "qual_e_o_seu_faturamento"],  # V1, V2 (coluna M)
+}
+
+
+def canon_index(header: list[str]) -> dict[str, int | None]:
+    hn = [norm(h) for h in header]
+    idx = {}
+    for key, names in LEADS_CANON.items():
+        found = next((hn.index(norm(n)) for n in names if norm(n) in hn), None)
+        if found is None:
+            found = next((i for n in names for i, h in enumerate(hn) if h.startswith(norm(n))), None)
+        idx[key] = found
+    return idx
+
+
+def load_leads(sources: list[tuple[str, list[list[str]]]]) -> list[list[str]]:
+    """Junta as abas de leads numa tabela só (cabeçalho = LEADS_CANON), cada
+    aba mapeada pelo PRÓPRIO cabeçalho. Remove leads de teste da Meta e
+    duplicados pelo id (mantém a 1ª ocorrência) — isso também neutraliza o
+    gviz devolvendo a 1ª aba quando o nome pedido não existe."""
+    header = list(LEADS_CANON)
+    out = [header]
+    seen = set()
+    for name, rows in sources:
+        if not rows:
+            print(f"  AVISO: aba de leads '{name}' vazia — ignorada", file=sys.stderr)
+            continue
+        idx = canon_index(rows[0])
+        missing = [k for k in ("id", "created_time", "faturamento") if idx[k] is None]
+        if missing:
+            print(f"  AVISO: aba de leads '{name}' sem coluna(s) {missing}", file=sys.stderr)
+        kept = dup = test = 0
+        for row in rows[1:]:
+            if not any((c or "").strip() for c in row):
+                continue
+            if is_test_lead(" ".join(str(c) for c in row)):
+                test += 1
+                continue
+            lead_id = cell(row, idx["id"])
+            if lead_id and lead_id in seen:
+                dup += 1
+                continue
+            if lead_id:
+                seen.add(lead_id)
+            out.append([cell(row, idx[k]) for k in header])
+            kept += 1
+        print(f"  leads aba '{name}': {kept} (duplicados ignorados: {dup}, teste: {test})", file=sys.stderr)
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # Vendas -> lista de compras (uma entrada por linha, nunca agregada)
 # --------------------------------------------------------------------------- #
 def build_purchases(sales_rows):
@@ -362,11 +443,11 @@ def process(leads_rows, meta_rows, sales_rows):
     lheader = leads_rows[0] if leads_rows else []
     lidx = header_index(
         lheader,
-        {"id": ["id"], "created": ["created_time"], "phone": ["phone_number"], "name": ["nome_completo"],
-         "qualif": ["qual_é_o_faturamento_anual"], "campaign": ["campaign_name"], "adset": ["adset_name"],
+        {"id": ["id"], "created": ["created_time"], "phone": ["phone_number"], "name": ["nome"],
+         "qualif": ["faturamento"], "campaign": ["campaign_name"], "adset": ["adset_name"],
          "ad": ["ad_name"], "plat": ["platform"], "form": ["form_name"]},
-        {"id": 0, "created": 1, "phone": 15, "name": 13, "qualif": 12, "campaign": 7, "adset": 5, "ad": 3,
-         "plat": 11, "form": 9},
+        {k: i for i, k in enumerate(["id", "created", "campaign", "adset", "ad", "plat", "form",
+                                     "phone", "name", "qualif"])},
     )
 
     leads = []
@@ -545,14 +626,26 @@ def render(data, template_path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--leads-file", help="CSV local da aba Leads (fonte única de leads)")
+    ap.add_argument("--leads-file", action="append",
+                    help="CSV local de uma aba de leads (repita: 1 por aba, ex. Lead Ads e IA | FORM-01 [V2])")
     ap.add_argument("--meta-file", help="CSV local da aba IA | QUERIES | GIACO (Meta Ads)")
     ap.add_argument("--sales-file", help="CSV local da aba Vendas (Compradores)")
     ap.add_argument("--template", default="build/template.html")
     ap.add_argument("--out", default="dist/index.html")
     args = ap.parse_args()
 
-    leads_rows = load_rows(sheet_url(SPREADSHEET_ID_LEADS, SHEET_LEADS), args.leads_file)
+    if args.leads_file:
+        sources = [(path, read_csv_file(path)) for path in args.leads_file]
+    else:
+        sources = []
+        for sheet in SHEETS_LEADS:
+            try:
+                sources.append((sheet, fetch_csv(sheet_url(SPREADSHEET_ID_LEADS, sheet))))
+            except Exception as e:   # uma aba fora do ar não derruba o build
+                print(f"  AVISO: falha ao carregar aba de leads '{sheet}': {e}", file=sys.stderr)
+        if not sources:
+            sys.exit("ERRO: nenhuma aba de leads pôde ser carregada")
+    leads_rows = load_leads(sources)
     # Vendas: mockup até a planilha de Compradores ser conectada.
     if args.sales_file or SPREADSHEET_ID_VENDAS:
         sales_rows = load_rows(sheet_url(SPREADSHEET_ID_VENDAS or "", SHEET_VENDAS), args.sales_file)

@@ -20,23 +20,38 @@ e o custo de cada etapa (CPL, CPMQL, CAC), e se atualiza sozinho a cada ~30 min
 
 ## Critério de Lead Qualificado (MQL)
 
-Coluna **M** da aba Leads (`qual_é_o_faturamento_anual_da_sua_empres?_`):
+Vale para os **dois formulários**: faturamento **acima de R$ 200 mil** é MQL.
+A coluna usada é a **M** de cada aba (V1: `qual_é_o_faturamento_anual_da_sua_empres?_`;
+V2: `qual_é_o_seu_faturamento_mensal?` — a pergunta `qual_foi_o_seu_faturamento_do_ano_anterior?`
+do V2 **não** é usada).
 
-| Valor | Classificação |
+A regra não depende do texto exato da faixa (os forms usam formatos diferentes,
+ex. V1 `até_r$_200.000,00` e V2 `até_r$_200_mil`):
+
+| Valor (normalizado, sem acento) | Classificação |
 |---|---|
-| `de_r$_200.000,00_a_r$_500.000,00` | **MQL** |
-| `acima_de_r$_500.000,00` | **MQL** |
-| `até_r$_200.000,00` | não qualificado |
+| vazio ou começando com `até` | não qualificado |
+| qualquer outra faixa com número (ex. `de_r$_200.000,00_a_r$_500.000,00`, `acima_de_r$_500.000,00`, `de_r$_200_mil_a_r$_500_mil`) | **MQL** |
+| lead de teste da Meta (`<test lead ...>`) | nunca conta (excluído) |
 
-Lógica em `build/build.py` → `MQL_FAIXAS` / `is_qualificado()`.
+Lógica em `build/build.py` → `is_qualificado()`.
 
 ## Fontes de dados (somente leitura)
 
-- **Leads** (`1Gw6XZSL8OG4VYs8rEP2_vHvYLhbT4uhJFBOlLRyBZIg`), aba **Lead Ads**:
-  `id` · `created_time` · `ad_id` · `ad_name` · `adset_id` · `adset_name` ·
-  `campaign_id` · `campaign_name` · `form_id` · `form_name` · `is_organic` ·
-  `platform` · `qual_é_o_faturamento_anual_da_sua_empres?_` · `nome_completo` ·
-  `email` · `phone_number` · `lead_status`
+- **Leads** (`1Gw6XZSL8OG4VYs8rEP2_vHvYLhbT4uhJFBOlLRyBZIg`), **duas abas**, uma por
+  formulário (`SHEETS_LEADS` em `build/build.py`):
+  - **Lead Ads** (form IA | FORM-01 [V1]): `id` · `created_time` · `ad_id` · `ad_name` ·
+    `adset_id` · `adset_name` · `campaign_id` · `campaign_name` · `form_id` · `form_name` ·
+    `is_organic` · `platform` · `qual_é_o_faturamento_anual_da_sua_empres?_` (M) ·
+    `nome_completo` · `email` · `phone_number` · `lead_status`
+  - **IA | FORM-01 [V2]**: mesmas colunas de atribuição/id/data/telefone, mas nome em
+    `full_name` e faturamento em `qual_é_o_seu_faturamento_mensal?` (M); tem também
+    `qual_foi_o_seu_faturamento_do_ano_anterior?`, dívidas e `whatsapp_number` (não usados).
+
+  As duas abas são mapeadas pelo próprio cabeçalho para um cabeçalho canônico,
+  unidas numa tabela só e **deduplicadas pelo `id` do lead** (protege também contra o
+  export gviz devolver a 1ª aba quando o nome não existe). Se uma aba falhar ao carregar,
+  o build loga um aviso e segue com a outra.
 - **Meta Ads** (`1urfcE0E-FnZ9UfctisN-LmXAO-7H28Sb0g13ft_qN1M`), aba **IA | QUERIES | GIACO**:
   `Day` · `Campaign Name` · `Ad Set Name` · `Ad Name` · `Amount Spent` ·
   `Impressions` · `Link Clicks` · `Reach` (sem Landing Page Views → Page View/ConvLP ficam "-").
@@ -52,7 +67,7 @@ Lógica em `build/build.py` → `MQL_FAIXAS` / `is_qualificado()`.
 ## Rodar local
 
 ```bash
-python build/build.py --leads-file leads.csv --meta-file meta.csv --out dist/index.html
+python build/build.py --leads-file lead_ads.csv --leads-file form_v2.csv --meta-file meta.csv --out dist/index.html
 ```
 
 Automação e cron-job.org: ver `SETUP-CRON.md`.
